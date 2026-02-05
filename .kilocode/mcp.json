@@ -1,29 +1,30 @@
 {
   "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.38"],
-      "alwaysAllow": ["browser_navigate"]
-    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"],
       "env": {
         "DEFAULT_MINIMUM_TOKENS": "20000"
       },
-      "alwaysAllow": ["resolve-library-id", "query-docs"]
+      "alwaysAllow": [
+        "resolve-library-id",
+        "query-docs"
+      ]
     },
     "supabase": {
       "command": "npx",
-      "args": ["-y", "@supabase/mcp-server-supabase@0.5.5", "--access-token", "sbp_29d7206f7f839b2feaf7fbef2b98cc9ef608d705"]
-    },
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@github/github-mcp-server"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
-      },
-      "alwaysAllow": []
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@0.5.5",
+        "--access-token",
+        "sbp_29d7206f7f839b2feaf7fbef2b98cc9ef608d705"
+      ],
+      "alwaysAllow": [
+        "list_projects",
+        "get_project",
+        "list_tables",
+        "execute_sql"
+      ]
     }
   }
 }
