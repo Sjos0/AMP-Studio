@@ -1,0 +1,10 @@
+{
+  "name": "creativity",
+  "displayName": "Criatividade",
+  "description": "Skill eterna de criatividade para aplicar em todas as tarefas",
+  "version": "1.0.0",
+  "author": "Kilo Code",
+  "tags": ["personality", "eternal", "creative-thinking"],
+  "alwaysLoad": true,
+  "priority": 100
+}
