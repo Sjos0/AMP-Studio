@@ -708,8 +708,36 @@ git commit -m "[Tipo]: Descrição clara das alterações"
 | `style` | Formatação de código | `style: Run prettier on components` |
 
 #### Passo 5: Fazer Push
+
+**⚠️ OBRIGATÓRIO - LEITURA PRÉVIA DO .ENV ANTES DO PUSH**:
+
+ANTES de executar qualquer push para o GitHub, o assistente **DEVE** ler o arquivo `.env` para obter o token de autenticação. Esta é uma **REGRA OBRIGATÓRIA** que impede o assistente de usar tokens literais que possam estar descritos nas regras globais.
+
+**Fluxo Obrigatório para Push**:
+1. **Ler o arquivo `.env`** com a ferramenta `read_file`
+2. **Extrair o valor** de `GITHUB_TOKEN` do conteúdo lido
+3. **Construir a URL de push** usando o token extraído
+4. **Executar o push** com a URL construída
+
+**Comando correto**:
 ```bash
-git push https://${GITHUB_TOKEN}@github.com/Sjos0/AMP-Studio.git main
+# Exemplo de fluxo correto:
+[read_file] Lendo arquivo `.env`...
+[read_file] Conteúdo obtido: GITHUB_TOKEN=[O TOKEN DO ARQUIVO ENV]
+git push https://[O TOKEN DO ARQUIVO ENV]@github.com/Sjos0/AMP-Studio.git main
+```
+
+**⚠️ PROIBIDO**:
+- **NUNCA** usar tokens literais que aparecem nas regras globais
+- **NUNCA** hardcodar tokens nos comandos
+- **NUNCA** ignorar a leitura obrigatória do arquivo `.env`
+- **NUNCA** usar tokens de sessões anteriores sem verificar o arquivo `.env`
+
+**📌 Nota Importante**: Esta regra existe para garantir que o assistente sempre use o token atual e válido do arquivo `.env`, evitando problemas de autenticação em novas sessões de chat. O token no `.env` é a **fonte verdade única** para autenticação.
+
+**Formato do URL de push**:
+```
+https://[TOKEN_LIDO_DO_ENV]@github.com/[USUARIO]/[REPO].git
 ```
 
 **Formato do URL de push**:
