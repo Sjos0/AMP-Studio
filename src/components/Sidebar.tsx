@@ -128,14 +128,17 @@ export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
       {/* Sidebar - anima translateX com ease-out para entrada e ease-in para saída */}
       <aside
         className={`fixed z-50 transform transition-all duration-500 ease-out 
-          /* Mobile: Bottom Sheet */
-          bottom-0 left-0 right-0 h-[85vh] w-full rounded-t-[32px] translate-y-full
-          /* Desktop: Right Drawer */
-          md:top-0 md:right-0 md:left-auto md:h-full md:w-96 md:rounded-l-[32px] md:rounded-tr-none md:translate-y-0 md:translate-x-full
+          /* Mobile: Bottom Sheet position */
+          bottom-0 left-0 right-0 h-[85vh] w-full rounded-t-[32px]
+          /* Desktop: Right Drawer position */
+          md:top-0 md:right-0 md:left-auto md:h-full md:w-96 md:rounded-l-[32px] md:rounded-tr-none
+          
+          /* Estado da Animação */
           ${isAnimating 
-            ? 'translate-y-0 md:translate-x-0 opacity-100' 
-            : 'translate-y-full md:translate-x-full opacity-0 md:opacity-100'
+            ? 'translate-y-0 opacity-100 md:translate-x-0 md:translate-y-0' 
+            : 'translate-y-full opacity-0 md:translate-x-full md:translate-y-0 md:opacity-100'
           }
+          
           bg-white/90 backdrop-blur-xl border-t md:border-t-0 md:border-l border-blue-100 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] md:shadow-2xl
         `}
       >
