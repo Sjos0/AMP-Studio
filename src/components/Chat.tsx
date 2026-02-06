@@ -73,9 +73,9 @@ export default function Chat() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-md px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
             <svg
               className="w-6 h-6 text-white"
               fill="none"
@@ -91,17 +91,21 @@ export default function Chat() {
             </svg>
           </div>
           <div>
-            <h1 className="font-semibold text-gray-800">Chat</h1>
-            <p className="text-xs text-gray-500">Online</p>
+            <h1 className="text-lg font-bold text-gray-800">Chat Inteligente</h1>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sistema Ativo</p>
+            </div>
           </div>
         </div>
-        {/* Hamburger Menu Button */}
+        
+        {/* Sidebar Trigger Button */}
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors group"
+          className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 rounded-2xl transition-all duration-300 active:scale-90 border border-transparent hover:border-blue-100 group"
         >
           <svg
-            className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300"
+            className="w-6 h-6 transition-transform duration-500 group-hover:rotate-180"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
