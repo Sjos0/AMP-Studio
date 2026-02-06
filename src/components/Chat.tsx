@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import InputArea from './InputArea';
 import Sidebar from './Sidebar';
+import { useMemory } from '@/lib/memory';
+import { UUID } from '@/types';
 
 interface Message {
   id: string;
@@ -11,25 +13,40 @@ interface Message {
   timestamp: Date;
 }
 
+// Mock user ID - em produção, viria do auth
+const MOCK_USER_ID: UUID = '00000000-0000-0000-0000-000000000000';
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Integração com sistema de memória
+  const { 
+    isLoading: memoryLoading, 
+    error: memoryError,
+    search,
+    createEphemeralMemory,
+    recentMemories 
+  } = useMemory(MOCK_USER_ID);
 
   // Inicializar mensagens apenas no cliente para evitar erro de hidratação
   useEffect(() => {
     setIsClient(true);
-    setMessages([
-      {
-        id: '1',
-        text: 'Olá! Como posso ajudar você hoje?',
-        sender: 'bot',
-        timestamp: new Date(),
-      },
-    ]);
-  }, []);
+    // Mensagem inicial
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: '1',
+          text: 'Olá! Sou seu assistente com memória. Posso lembrar de preferências e contexto das nossas conversas.',
+          sender: 'bot',
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, [messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +56,40 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (text: string) => {
+  /**
+   * Busca memórias relevantes antes de responder
+   */
+  const searchRelevantMemories = useCallback(async (query: string) => {
+    try {
+      const result = await search(query);
+      if (result && result.results.length > 0) {
+        console.log(`[Memory] Found ${result.results.length} relevant memories`);
+        return result.results.slice(0, 3).map(r => r.content).join('\n');
+      }
+      return null;
+    } catch (error) {
+      console.error('[Memory] Search error:', error);
+      return null;
+    }
+  }, [search]);
+
+  /**
+   * Salva mensagem na memória efêmera
+   */
+  const saveToMemory = useCallback(async (message: string, isUser: boolean) => {
+    try {
+      await createEphemeralMemory({
+        userId: MOCK_USER_ID,
+        date: new Date(),
+        title: isUser ? 'User message' : 'Bot response',
+        content: message,
+      });
+    } catch (error) {
+      console.error('[Memory] Save error:', error);
+    }
+  }, [createEphemeralMemory]);
+
+  const handleSendMessage = async (text: string) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       text: text,
@@ -50,17 +100,39 @@ export default function Chat() {
     setMessages((prev) => [...prev, newMessage]);
     setIsTyping(true);
 
-    // Simular resposta do bot (sem IA definida ainda)
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Mensagem recebida! Esta é uma resposta simulada. A integração com IA será adicionada posteriormente.',
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botResponse]);
+    try {
+      // Busca memórias relevantes
+      const relevantMemories = await searchRelevantMemories(text);
+      
+      // Simula processamento com memória (futuro: chamaria LLM aqui)
+      const contextInfo = relevantMemories 
+        ? `\n\n[Memória relevante encontrada: ${relevantMemories}]`
+        : '';
+      
+      // Salva mensagem do usuário na memória
+      await saveToMemory(text, true);
+
+      // Simular resposta do bot com contexto de memória
+      setTimeout(() => {
+        const botResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: relevantMemories
+            ? `Entendi! Com base nas nossas conversas anteriores: "${relevantMemories.substring(0, 100)}...". ${text}`
+            : `Recebi sua mensagem: "${text}". ${contextInfo}`,
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        
+        setMessages((prev) => [...prev, botResponse]);
+        setIsTyping(false);
+        
+        // Salva resposta do bot
+        saveToMemory(botResponse.text, false);
+      }, 1000 + Math.random() * 500);
+    } catch (error) {
+      console.error('Error processing message:', error);
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -69,6 +141,12 @@ export default function Chat() {
       minute: '2-digit',
     });
   };
+
+  // Estado do indicador de memória
+  const memoryStatus = memoryLoading ? 'loading' : memoryError ? 'error' : 'active';
+  
+  // Mostrar contador de memórias recentes
+  const recentCount = recentMemories?.length || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -93,8 +171,16 @@ export default function Chat() {
           <div>
             <h1 className="text-lg font-bold text-gray-800">Chat Inteligente</h1>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Sistema Ativo</p>
+              <span 
+                className={`w-2 h-2 rounded-full animate-pulse ${
+                  memoryStatus === 'loading' ? 'bg-yellow-500' :
+                  memoryStatus === 'error' ? 'bg-red-500' : 'bg-green-500'
+                }`} 
+              />
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                {memoryStatus === 'loading' ? 'Carregando memória...' :
+                 memoryStatus === 'error' ? 'Erro na memória' : 'Memória Ativa'}
+              </p>
             </div>
           </div>
         </div>
@@ -102,8 +188,11 @@ export default function Chat() {
         {/* Sidebar Trigger Button */}
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 rounded-2xl transition-all duration-300 active:scale-90 border border-transparent hover:border-blue-100 group"
+          className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 rounded-2xl transition-all duration-300 active:scale-90 border border-transparent hover:border-blue-100 group relative"
         >
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+          </span>
           <svg
             className="w-6 h-6 transition-transform duration-500 group-hover:rotate-180"
             fill="none"

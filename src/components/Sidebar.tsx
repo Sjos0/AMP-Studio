@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useMemory } from '@/lib/memory';
+import { UUID } from '@/types';
+
+// Mock user ID - em produção, viria do auth
+const MOCK_USER_ID: UUID = '00000000-0000-0000-0000-000000000000';
 
 interface Message {
   id: string;
@@ -18,6 +23,14 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [sessionsFromDb, setSessionsFromDb] = useState<any[]>([]);
+  
+  // Integração com sistema de memória
+  const { 
+    isLoading: memoryLoading, 
+    search,
+    createSessionMemory,
+  } = useMemory(MOCK_USER_ID);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,6 +39,9 @@ export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
       requestAnimationFrame(() => {
         setIsAnimating(true);
       });
+      
+      // Carregar sessões do banco de dados
+      loadSessions();
     } else {
       // Animação de saída primeiro
       setIsAnimating(false);
@@ -35,6 +51,36 @@ export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
       }, 300);
     }
   }, [isOpen]);
+
+  /**
+   * Carrega sessões do banco de dados
+   */
+  const loadSessions = async () => {
+    try {
+      // Busca sessões recentes do banco
+      const result = await search('', { maxResults: 10, sources: ['session'] });
+      if (result && result.results.length > 0) {
+        // Agrupa por sessão
+        const sessions = result.results.reduce((acc: any[], curr: any) => {
+          const existing = acc.find(s => s.filePath === curr.filePath);
+          if (existing) {
+            existing.chunks.push(curr);
+          } else {
+            acc.push({
+              filePath: curr.filePath,
+              title: curr.content.substring(0, 50),
+              chunks: [curr],
+              relevanceScore: curr.relevanceScore,
+            });
+          }
+          return acc;
+        }, []);
+        setSessionsFromDb(sessions);
+      }
+    } catch (error) {
+      console.error('[Sidebar] Error loading sessions:', error);
+    }
+  };
 
   // Agrupar mensagens por sessão de conversa
   const getConversationGroups = () => {
