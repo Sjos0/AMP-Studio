@@ -2,11 +2,13 @@
 
 ## 1. Escaneamento Inicial (OBRIGATÓRIO)
 
-Quando usuário inicia tarefa/problema/ajuste **grande**:
+Quando usuário inicia **qualquer** tarefa/problema/ajuste:
 1. Ler pasta `to-do-list/` → verificar TODOS arquivos
 2. Comparar mentalmente: tarefa existente corresponde ao problema?
    - **SIM**: Continuar tarefa existente → terminar → deletar arquivo
-   - **NÃO**: Criar novo arquivo `to-do-list/[timestamp]-task.md` → `update_todo_list`
+   - **NÃO**: Criar novo arquivo `to-do-list/[timestamp]-task.md`
+
+**REGRA GLOBAL**: TODO list é obrigatório para **todas** as tarefas, independente da complexidade (simples, moderada ou complexa).
 
 ## 2. TODO List Obrigatória
 
