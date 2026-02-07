@@ -14,7 +14,8 @@ Este arquivo contém diretrizes **core** do assistente de IA Kilo Code. Regras d
 ├── subrules/                 # Arquivos lidos SOB DEMANDA (trigger-based)
 │   ├── skill-usage.md        # Uso de skills (trigger: uso de skills)
 │   ├── antigravity-kit.md    # Antigravity Kit (trigger: uso de Antigravity Kit)
-│   └── github-sync.md        # GitHub Sync (trigger: 10+ modificações)
+│   ├── github-sync.md        # GitHub Sync (trigger: 10+ modificações)
+│   └── self-compliance.md    # Auto-verificação (trigger: regras aplicáveis)
 └── skills/                   # Skills do Kilo Code
 ```
 
@@ -49,6 +50,7 @@ O assistente deve adotar uma abordagem de **raciocínio lento e deliberado**, es
 | `skill-usage.md` | Uso de qualquer skill | `.kilocode/subrules/skill-usage.md` |
 | `antigravity-kit.md` | Uso de Antigravity Kit | `.kilocode/subrules/antigravity-kit.md` |
 | `github-sync.md` | 10+ modificações | `.kilocode/subrules/github-sync.md` |
+| `self-compliance.md` | Regras aplicáveis | `.kilocode/subrules/self-compliance.md` |
 
 ### Fluxo de Carregamento
 

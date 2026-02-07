@@ -169,7 +169,7 @@ export default function Chat() {
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-800">Chat Inteligente</h1>
+            <h1 className="text-lg font-bold text-gray-800">AMP Chat</h1>
             <div className="flex items-center gap-1.5">
               <span 
                 className={`w-2 h-2 rounded-full animate-pulse ${

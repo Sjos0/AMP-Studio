@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chat App",
+  title: "AMP Chat",
   description: "Aplicativo de chat mobile-first",
 };
 
