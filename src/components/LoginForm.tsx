@@ -18,7 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 /**
  * Componente de formulário de login
  * Suporta login com email/senha e criação de conta
- * Design com glassmorphism seguindo padrão do projeto
+ * Design com paleta azul e branco seguindo padrão do AMP Studio
  */
 export function LoginForm() {
   const router = useRouter()
@@ -69,10 +69,10 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm bg-white/90 backdrop-blur-xl border border-blue-100 shadow-lg shadow-blue-100/50">
       <CardHeader className="text-center">
-        <CardTitle>{isSignUp ? 'Criar Conta' : 'Entrar'}</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-gray-800">{isSignUp ? 'Criar Conta' : 'Entrar'}</CardTitle>
+        <CardDescription className="text-gray-500">
           {isSignUp
             ? 'Crie sua conta para começar'
             : 'Entre com suas credenciais'}
@@ -81,7 +81,7 @@ export function LoginForm() {
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-700">Email</Label>
             <Input
               id="email"
               name="email"
@@ -91,16 +91,17 @@ export function LoginForm() {
               disabled={isLoading}
               autoComplete="email"
               autoFocus
+              className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-gray-700">Senha</Label>
               {!isSignUp && (
                 <button
                   type="button"
-                  className="text-xs text-white/60 hover:text-white/80 underline-offset-4 hover:underline"
+                  className="text-xs text-blue-600 hover:text-blue-700 underline-offset-4 hover:underline"
                 >
                   Esqueceu a senha?
                 </button>
@@ -115,22 +116,27 @@ export function LoginForm() {
               disabled={isLoading}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
               minLength={6}
+              className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           {error && (
-            <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md">
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="p-3 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-md">
+            <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-xl">
               {message}
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200" 
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Spinner className="mr-2" />
@@ -143,7 +149,7 @@ export function LoginForm() {
             )}
           </Button>
 
-          <div className="text-center text-sm text-white/60">
+          <div className="text-center text-sm text-gray-500">
             <button
               type="button"
               onClick={() => {
@@ -151,7 +157,7 @@ export function LoginForm() {
                 setError(null)
                 setMessage(null)
               }}
-              className="hover:text-white/80 underline-offset-4 hover:underline"
+              className="hover:text-blue-600 underline-offset-4 hover:underline"
             >
               {isSignUp
                 ? 'Já tem uma conta? Entre'
