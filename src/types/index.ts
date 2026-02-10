@@ -1,13 +1,17 @@
 /**
- * Index - Tipos do Sistema de Memória
+ * Index - Tipos do Sistema de Memória e Conversas
  * AMP Studio
  */
 
 // Re-export all memory types
 export * from './memory';
 
+// Re-export all conversation types
+export * from './conversation';
+
 // Constants
 export { MEMORY_CONSTANTS } from './memory';
+export { CONVERSATION_CONSTANTS } from './conversation';
 
 // Types
 export type {

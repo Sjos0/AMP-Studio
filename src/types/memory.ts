@@ -88,6 +88,7 @@ export interface CreateMemoryFileInput {
   fileHash: string;
   fileSizeBytes?: number;
   lineCount?: number;
+  chunkCount?: number;
 }
 
 // =============================================================================
@@ -289,23 +290,89 @@ export interface CreateSearchLogInput {
 
 /**
  * Métricas agregadas do sistema
+ *
+ * NOTA: Este tipo representa tanto dados persistidos (tabela memory_metrics)
+ * quanto métricas calculadas em runtime pelo MemoryMetricsCollector.
+ * Propriedades de persistência são opcionais para suportar ambos os casos.
  */
 export interface MemoryMetrics {
-  id: UUID;
+  // === Propriedades de persistência (opcionais para runtime) ===
+  id?: UUID;
+  metricDate?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  
+  // === Identificação ===
   userId: UUID;
-  metricDate: Date;
+  
+  // === Contadores de chunks/arquivos ===
   totalChunks: number;
   totalFiles: number;
-  totalSessions: number;
-  ephemeralSizeBytes: number;
-  durableSizeBytes: number;
-  sessionSizeBytes: number;
+  totalSessions?: number;
+  
+  // === Contadores adicionais para dashboard ===
+  ephemeralLogs: number;
+  durableMemories: number;
+  sessions: number;
+  
+  // === Tamanhos em bytes (opcionais - nem sempre disponíveis) ===
+  ephemeralSizeBytes?: number;
+  durableSizeBytes?: number;
+  sessionSizeBytes?: number;
+  
+  // === Tamanhos em MB para dashboard ===
+  ephemeralSizeMB: number;
+  durableSizeMB: number;
+  sessionSizeMB: number;
+  totalSizeMB: number;
+  
+  // === Cache metrics ===
   cacheHits: number;
   cacheMisses: number;
+  /** Taxa de acerto do cache de buscas (0-100) */
+  hitRate: number;
+  /** Taxa de acerto do cache de embeddings (0-100) */
+  cacheHitRate: number;
+  /** Taxa de acerto do cache de embeddings - alias para cacheHitRate (0-100) */
+  embeddingCacheHitRate: number;
+  
+  // === Performance ===
+  /** Latência de busca P95 em ms */
+  searchLatencyP95: number;
+  /** Latência de escrita P95 em ms */
+  writeLatencyP95: number;
   avgSearchLatencyMs: number;
   avgIndexingTimeMs: number;
-  createdAt: Date;
-  updatedAt: Date;
+  
+  // === Qualidade de busca ===
+  /** Score de relevância médio (0-5) */
+  relevanceScore: number;
+  /** Similaridade semântica média (0-1) */
+  semanticSimilarity: number;
+  /** Cobertura de overlap de chunks (0-100) */
+  chunkOverlapCoverage: number;
+  /** Score híbrido BM25+vector (0-1) */
+  hybridScore: number;
+  /** Recall de contexto (0-100) */
+  contextRecall: number;
+  
+  // === Custos ===
+  /** Custo de embedding por query em USD */
+  embeddingCostPerQuery: number;
+  
+  // === Saúde do sistema ===
+  /** Frescor da memória em minutos */
+  memoryFreshnessMinutes: number;
+  /** Consistência do índice em percentual */
+  indexConsistencyPercent: number;
+  /** Economia de cache em percentual */
+  cacheSavingsPercent: number;
+  /** Violações de isolamento entre agentes */
+  agentIsolationViolations: number;
+  
+  // === Contexto (opcionais - nem sempre disponíveis) ===
+  currentTokens?: number;
+  contextUtilizationPercent?: number;
 }
 
 // =============================================================================

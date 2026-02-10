@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMemory } from '@/lib/memory';
-import { UUID } from '@/types';
+import { UUID, Conversation } from '@/types';
 
 // Mock user ID - em produção, viria do auth
 const MOCK_USER_ID: UUID = '00000000-0000-0000-0000-000000000000';
@@ -18,9 +18,28 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   messages: Message[];
+  /** Conversas do hook useConversations (opcional para compatibilidade) */
+  conversations?: Conversation[];
+  /** Callback para criar nova conversa */
+  onNewConversation?: () => void;
+  /** Callback para selecionar uma conversa */
+  onSelectConversation?: (conversationId: UUID) => void;
+  /** Callback para deletar todas as conversas */
+  onDeleteAll?: () => void;
+  /** ID da conversa atualmente ativa */
+  currentConversationId?: UUID | null;
 }
 
-export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
+export default function Sidebar({
+  isOpen,
+  onClose,
+  messages,
+  conversations: conversationsFromHook,
+  onNewConversation,
+  onSelectConversation,
+  onDeleteAll,
+  currentConversationId,
+}: SidebarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [sessionsFromDb, setSessionsFromDb] = useState<any[]>([]);
@@ -317,14 +336,20 @@ export default function Sidebar({ isOpen, onClose, messages }: SidebarProps) {
 
         {/* Footer - Botão de Nova Conversa e Limpar */}
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 space-y-3">
-          <button className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98]">
+          <button
+            onClick={() => onNewConversation?.()}
+            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98]"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
             Nova Conversa
           </button>
           
-          <button className="w-full py-3 px-4 bg-gray-50 hover:bg-red-50 text-gray-500 hover:text-red-500 text-xs font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group border border-transparent hover:border-red-100">
+          <button
+            onClick={() => onDeleteAll?.()}
+            className="w-full py-3 px-4 bg-gray-50 hover:bg-red-50 text-gray-500 hover:text-red-500 text-xs font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group border border-transparent hover:border-red-100"
+          >
             <svg
               className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300"
               fill="none"

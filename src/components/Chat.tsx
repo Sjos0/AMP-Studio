@@ -4,9 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import InputArea from './InputArea';
 import Sidebar from './Sidebar';
 import { useMemory } from '@/lib/memory';
-import { UUID } from '@/types';
+import { useConversations } from '@/lib/conversations';
+import { UUID, Message as ConversationMessage } from '@/types';
 
-interface Message {
+// Tipo local para mensagens do chat (compatível com UI)
+interface ChatMessage {
   id: string;
   text: string;
   sender: 'user' | 'bot';
@@ -17,36 +19,92 @@ interface Message {
 const MOCK_USER_ID: UUID = '00000000-0000-0000-0000-000000000000';
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Integração com sistema de memória
-  const { 
-    isLoading: memoryLoading, 
+  const {
+    isLoading: memoryLoading,
     error: memoryError,
     search,
     createEphemeralMemory,
-    recentMemories 
+    recentMemories
   } = useMemory(MOCK_USER_ID);
 
-  // Inicializar mensagens apenas no cliente para evitar erro de hidratação
+  // Integração com sistema de conversas
+  const {
+    conversations,
+    currentConversation,
+    messages: conversationMessages,
+    isLoading: conversationsLoading,
+    createConversation,
+    selectConversation,
+    deleteConversation,
+    sendMessage: sendConversationMessage,
+  } = useConversations(MOCK_USER_ID);
+
+  /**
+   * Handler para criar nova conversa
+   */
+  const handleNewConversation = useCallback(async () => {
+    // Limpar mensagens locais e criar nova conversa
+    setMessages([]);
+    await createConversation('Nova Conversa');
+  }, [createConversation]);
+
+  /**
+   * Handler para selecionar uma conversa existente
+   */
+  const handleSelectConversation = useCallback(async (conversationId: UUID) => {
+    await selectConversation(conversationId);
+  }, [selectConversation]);
+
+  /**
+   * Handler para deletar todas as conversas
+   */
+  const handleDeleteAllConversations = useCallback(async () => {
+    if (!conversations.length) return;
+    
+    // Deletar todas as conversas sequencialmente
+    for (const conv of conversations) {
+      await deleteConversation(conv.id);
+    }
+    
+    // Limpar estado local
+    setMessages([]);
+  }, [conversations, deleteConversation]);
+
+  // Sincronizar mensagens do banco com estado local
+  useEffect(() => {
+    if (conversationMessages.length > 0) {
+      const chatMessagesFromDb: ChatMessage[] = conversationMessages.map(msg => ({
+        id: msg.id,
+        text: msg.content,
+        sender: msg.role === 'assistant' ? 'bot' : msg.role as 'user' | 'bot',
+        timestamp: msg.createdAt,
+      }));
+      setMessages(chatMessagesFromDb);
+    }
+  }, [conversationMessages]);
+
+  // Inicializar no cliente
   useEffect(() => {
     setIsClient(true);
-    // Mensagem inicial
-    if (messages.length === 0) {
+    // Mensagem inicial de boas-vindas (apenas se não houver conversa ativa)
+    if (messages.length === 0 && !currentConversation) {
       setMessages([
         {
-          id: '1',
+          id: 'welcome',
           text: 'Olá! Sou seu assistente com memória. Posso lembrar de preferências e contexto das nossas conversas.',
           sender: 'bot',
           timestamp: new Date(),
         },
       ]);
     }
-  }, [messages.length]);
+  }, [messages.length, currentConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -90,44 +148,64 @@ export default function Chat() {
   }, [createEphemeralMemory]);
 
   const handleSendMessage = async (text: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: text,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
     setIsTyping(true);
 
     try {
+      // Criar nova conversa se não houver uma ativa
+      let conversationId = currentConversation?.id;
+      if (!conversationId) {
+        conversationId = await createConversation('Nova Conversa') || undefined;
+        if (!conversationId) {
+          console.error('[Chat] Falha ao criar conversa');
+          setIsTyping(false);
+          return;
+        }
+      }
+
+      // Adicionar mensagem do usuário otimisticamente na UI
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        text: text,
+        sender: 'user',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Salvar mensagem do usuário no banco
+      await sendConversationMessage(text, 'user');
+
       // Busca memórias relevantes
       const relevantMemories = await searchRelevantMemories(text);
       
       // Simula processamento com memória (futuro: chamaria LLM aqui)
-      const contextInfo = relevantMemories 
+      const contextInfo = relevantMemories
         ? `\n\n[Memória relevante encontrada: ${relevantMemories}]`
         : '';
       
-      // Salva mensagem do usuário na memória
+      // Salva mensagem do usuário na memória efêmera
       await saveToMemory(text, true);
 
       // Simular resposta do bot com contexto de memória
-      setTimeout(() => {
-        const botResponse: Message = {
+      setTimeout(async () => {
+        const botResponseText = relevantMemories
+          ? `Entendi! Com base nas nossas conversas anteriores: "${relevantMemories.substring(0, 100)}...". ${text}`
+          : `Recebi sua mensagem: "${text}". ${contextInfo}`;
+
+        // Salvar resposta do bot no banco
+        await sendConversationMessage(botResponseText, 'assistant');
+
+        // Adicionar resposta do bot na UI
+        const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
-          text: relevantMemories
-            ? `Entendi! Com base nas nossas conversas anteriores: "${relevantMemories.substring(0, 100)}...". ${text}`
-            : `Recebi sua mensagem: "${text}". ${contextInfo}`,
+          text: botResponseText,
           sender: 'bot',
           timestamp: new Date(),
         };
-        
-        setMessages((prev) => [...prev, botResponse]);
+        setMessages((prev) => [...prev, botMessage]);
         setIsTyping(false);
         
-        // Salva resposta do bot
-        saveToMemory(botResponse.text, false);
+        // Salva resposta do bot na memória efêmera
+        saveToMemory(botResponseText, false);
       }, 1000 + Math.random() * 500);
     } catch (error) {
       console.error('Error processing message:', error);
@@ -265,6 +343,11 @@ export default function Chat() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         messages={messages}
+        conversations={conversations}
+        onNewConversation={handleNewConversation}
+        onSelectConversation={handleSelectConversation}
+        onDeleteAll={handleDeleteAllConversations}
+        currentConversationId={currentConversation?.id}
       />
     </div>
   );
