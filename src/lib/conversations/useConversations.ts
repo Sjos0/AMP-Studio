@@ -48,6 +48,11 @@ export function useConversations(userId?: UUID): UseConversationsReturn {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   
+  // Estados de busca
+  const [searchResults, setSearchResults] = useState<ConversationWithCount[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearching, setIsSearching] = useState(false);
+  
   // ID efetivo do usuário (prop ou auth)
   const effectiveUserId = userId || user?.id || null;
 
@@ -372,6 +377,45 @@ export function useConversations(userId?: UUID): UseConversationsReturn {
   }, []);
 
   // ===========================================================================
+  // Ações de Busca
+  // ===========================================================================
+
+  /**
+   * Busca conversas por título ou conteúdo das mensagens
+   * @param query - Termo de busca (vazio retorna todas as conversas)
+   */
+  const searchConversations = useCallback(async (query: string): Promise<void> => {
+    if (!effectiveUserId || !serviceRef.current) {
+      setError('Usuário não autenticado');
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+    setSearchQuery(query);
+
+    try {
+      const results = await serviceRef.current.searchConversations(effectiveUserId, query);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Erro ao buscar conversas:', err);
+      setError('Erro ao buscar conversas');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [effectiveUserId]);
+
+  /**
+   * Limpa os resultados da busca e reseta o estado
+   */
+  const clearSearch = useCallback((): void => {
+    setSearchResults([]);
+    setSearchQuery('');
+    setIsSearching(false);
+  }, []);
+
+  // ===========================================================================
   // Return
   // ===========================================================================
 
@@ -383,6 +427,11 @@ export function useConversations(userId?: UUID): UseConversationsReturn {
     isLoading,
     error,
 
+    // Search State
+    searchResults,
+    searchQuery,
+    isSearching,
+
     // Conversation Actions
     createConversation,
     selectConversation,
@@ -393,6 +442,10 @@ export function useConversations(userId?: UUID): UseConversationsReturn {
     // Message Actions
     sendMessage,
     loadMessages,
+
+    // Search Actions
+    searchConversations,
+    clearSearch,
 
     // Realtime Actions
     subscribeToConversation,

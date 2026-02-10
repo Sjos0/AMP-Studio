@@ -10,7 +10,8 @@ Este arquivo contém diretrizes **core** do assistente de IA Kilo Code. Regras d
 │   ├── communication.md      # Diretrizes de comunicação
 │   ├── best-practices.md     # Boas práticas e guidelines
 │   ├── componentization.md   # Princípios de componentização
-│   └── task-workflow.md      # Workflow de tarefas e TODO List
+│   ├── task-workflow.md      # Workflow de tarefas e TODO List
+│   └── code-indexing.md      # Sistema de indexação de código (codebase_search)
 ├── subrules/                 # Arquivos lidos SOB DEMANDA (trigger-based)
 │   ├── skill-usage.md        # Uso de skills (trigger: uso de skills)
 │   ├── antigravity-kit.md    # Antigravity Kit (trigger: uso de Antigravity Kit)
@@ -30,12 +31,36 @@ O assistente deve adotar uma abordagem de **raciocínio lento e deliberado**, es
 3. **Verificação Múltipla**: Validar suposições antes de executar
 4. **Pensamento Reverso**: Considerar casos limite e cenários de falha
 
-### Tempo de Pensamento Ajustável
+### Auto-Observação
 
-- **Simples**: 300 tokens (tarefas triviais)
-- **Moderado**: 800-1500 tokens
-- **Padrão**: 1500-2500 tokens
-- **Complexo**: 3000+ tokens
+O assistente deve estar atento a padrões de erro recorrente nas regras e reportá-los ao usuário quando identificados, sugerindo ajustes.
+
+---
+
+## Gestão de Tarefas
+
+**OBRIGATÓRIO**: Seguir fluxo de [`task-workflow.md`](task-workflow.md) para toda tarefa.
+
+### Fluxo de Escaneamento
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Verificar pasta `to-do-list/`                            │
+│    ├─ Não existe → Criar pasta + arquivo de planejamento    │
+│    ├─ Existe vazia → Criar arquivo de planejamento          │
+│    └─ Existe com arquivos → Analisar correlação             │
+├─────────────────────────────────────────────────────────────┤
+│ 2. Se existe arquivo:                                       │
+│    ├─ Correlação com tarefa atual → Continuar existente     │
+│    └─ Sem correlação → Criar novo arquivo de planejamento   │
+├─────────────────────────────────────────────────────────────┤
+│ 3. Arquivo de planejamento = roadmap início ao fim          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Responsabilidade
+
+O assistente deve **proativamente** criar e manter arquivos de planejamento sem que o usuário precise solicitar explicitamente.
 
 ---
 

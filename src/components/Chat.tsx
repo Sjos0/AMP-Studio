@@ -44,6 +44,12 @@ export default function Chat() {
     selectConversation,
     deleteConversation,
     sendMessage: sendConversationMessage,
+    // Busca
+    searchResults,
+    searchQuery,
+    isSearching,
+    searchConversations,
+    clearSearch,
   } = useConversations(MOCK_USER_ID);
 
   /**
@@ -348,6 +354,12 @@ export default function Chat() {
         onSelectConversation={handleSelectConversation}
         onDeleteAll={handleDeleteAllConversations}
         currentConversationId={currentConversation?.id}
+        // Props de busca
+        searchResults={searchResults}
+        searchQuery={searchQuery}
+        isSearching={isSearching}
+        onSearch={searchConversations}
+        onClearSearch={clearSearch}
       />
     </div>
   );

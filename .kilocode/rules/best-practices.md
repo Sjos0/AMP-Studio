@@ -61,14 +61,3 @@
 **Arquitetura**: Escalar/manutível, composição > herança, baixo acoplamento, documentar decisões
 
 **Debugging**: Reproduzir primeiro, múltiplas hipóteses, validar com testes, documentar causa
-
-## Tempo de Pensamento
-
-| Complexidade | Tokens |
-|--------------|--------|
-| Simples | 300 |
-| Moderado | 800-1500 |
-| Padrão | 1500-2500 |
-| Complexo | 3000+ |
-
-**Incluir**: Análise de contexto, múltiplas abordagens, casos limite, justificativas, validação de suposições.

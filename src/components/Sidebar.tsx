@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useMemory } from '@/lib/memory';
-import { UUID, Conversation } from '@/types';
+import { UUID, Conversation, ConversationWithCount } from '@/types';
 
 // Mock user ID - em produção, viria do auth
 const MOCK_USER_ID: UUID = '00000000-0000-0000-0000-000000000000';
@@ -28,6 +28,16 @@ interface SidebarProps {
   onDeleteAll?: () => void;
   /** ID da conversa atualmente ativa */
   currentConversationId?: UUID | null;
+  /** Resultados da busca (do hook useConversations) */
+  searchResults?: ConversationWithCount[];
+  /** Query de busca atual */
+  searchQuery?: string;
+  /** Se está buscando */
+  isSearching?: boolean;
+  /** Callback para buscar conversas */
+  onSearch?: (query: string) => void;
+  /** Callback para limpar busca */
+  onClearSearch?: () => void;
 }
 
 export default function Sidebar({
@@ -39,10 +49,16 @@ export default function Sidebar({
   onSelectConversation,
   onDeleteAll,
   currentConversationId,
+  searchResults = [],
+  searchQuery = '',
+  isSearching = false,
+  onSearch,
+  onClearSearch,
 }: SidebarProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [sessionsFromDb, setSessionsFromDb] = useState<any[]>([]);
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
   
   // Integração com sistema de memória
   const { 
@@ -50,6 +66,32 @@ export default function Sidebar({
     search,
     createSessionMemory,
   } = useMemory(MOCK_USER_ID);
+  
+  // Debounce para busca
+  const debounceSearch = useCallback((query: string) => {
+    if (onSearch) {
+      // Debounce de 300ms
+      const timeoutId = setTimeout(() => {
+        onSearch(query);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [onSearch]);
+  
+  // Handler para mudança no campo de busca
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearchQuery(value);
+    debounceSearch(value);
+  };
+  
+  // Handler para limpar busca
+  const handleClearSearch = () => {
+    setLocalSearchQuery('');
+    if (onClearSearch) {
+      onClearSearch();
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -233,7 +275,10 @@ export default function Sidebar({
             <div>
               <h2 className="text-xl font-bold text-gray-800">Histórico</h2>
               <p className="text-sm text-gray-500 font-medium">
-                {conversations.length} {conversations.length === 1 ? 'sessão' : 'sessões'}
+                {localSearchQuery && searchResults.length > 0 
+                  ? `${searchResults.length} resultado${searchResults.length === 1 ? '' : 's'}`
+                  : `${conversations.length} ${conversations.length === 1 ? 'sessão' : 'sessões'}`
+                }
               </p>
             </div>
           </div>
@@ -257,9 +302,136 @@ export default function Sidebar({
           </button>
         </div>
 
+        {/* Campo de Busca */}
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar conversas..."
+              value={localSearchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+            {localSearchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <svg
+                  className="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+            {isSearching && (
+              <div className="absolute right-10 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Content */}
-        <div className="flex-1 overflow-y-auto h-[calc(100%-180px)] custom-scrollbar">
-          {conversations.length === 0 ? (
+        <div className="flex-1 overflow-y-auto h-[calc(100%-240px)] custom-scrollbar">
+          {/* Mostrar resultados da busca ou lista normal */}
+          {localSearchQuery && searchResults.length > 0 ? (
+            /* Search Results */
+            <div className="py-4 px-4 space-y-3">
+              {searchResults.map((result) => (
+                <div
+                  key={result.id}
+                  onClick={() => onSelectConversation?.(result.id)}
+                  className={`p-4 bg-white hover:bg-blue-50/50 rounded-[24px] border transition-all duration-300 cursor-pointer group relative overflow-hidden ${
+                    currentConversationId === result.id 
+                      ? 'border-blue-300 shadow-[0_8px_20px_-8px_rgba(59,130,246,0.2)]' 
+                      : 'border-gray-100 hover:border-blue-200 hover:shadow-[0_8px_20px_-8px_rgba(59,130,246,0.12)]'
+                  }`}
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-800 mb-0.5 line-clamp-1">
+                          {result.title || 'Sem título'}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-semibold text-gray-400">
+                            {result.messageCount} msgs
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-1.5 bg-gray-50 group-hover:bg-blue-100 rounded-lg transition-colors">
+                      <svg
+                        className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-600 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  {result.previewSnippet && (
+                    <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed group-hover:text-gray-900 transition-colors">
+                      {result.previewSnippet}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : localSearchQuery && !isSearching && searchResults.length === 0 ? (
+            /* No Results */
+            <div className="flex flex-col items-center justify-center h-full px-8 py-10 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-10 h-10 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">Nenhum resultado</h3>
+              <p className="text-sm text-gray-500 max-w-[200px]">
+                Não encontramos conversas com "{localSearchQuery}"
+              </p>
+            </div>
+          ) : conversations.length === 0 ? (
             /* Empty State */
             <div className="flex flex-col items-center justify-center h-full px-8 py-10 text-center">
               <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 animate-pulse">

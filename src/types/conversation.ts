@@ -223,6 +223,11 @@ export interface UseConversationsState {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
+  
+  // Search State
+  searchResults: ConversationWithCount[];
+  searchQuery: string;
+  isSearching: boolean;
 }
 
 /**
@@ -239,6 +244,10 @@ export interface UseConversationsActions {
   // Mensagens
   sendMessage: (content: string, role?: MessageRole) => Promise<UUID | null>;
   loadMessages: (conversationId: UUID) => Promise<void>;
+  
+  // Busca
+  searchConversations: (query: string) => Promise<void>;
+  clearSearch: () => void;
   
   // Realtime
   subscribeToConversation: (conversationId: UUID) => void;

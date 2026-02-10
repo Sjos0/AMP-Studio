@@ -117,6 +117,46 @@ export class ConversationService {
   }
 
   /**
+   * Busca conversas por título ou conteúdo das mensagens
+   * @param userId - ID do usuário
+   * @param query - Termo de busca (vazio retorna todas as conversas)
+   * @param limit - Limite de resultados (default 20)
+   * @returns Lista de conversas ordenadas por relevância
+   */
+  async searchConversations(
+    userId: UUID,
+    query: string,
+    limit: number = 20
+  ): Promise<ConversationWithCount[]> {
+    try {
+      const { data, error } = await this.client.rpc('search_conversations', {
+        p_user_id: userId,
+        p_query: query || '',
+        p_limit: limit,
+      });
+
+      if (error) {
+        console.error('Erro ao buscar conversas:', error);
+        return [];
+      }
+
+      return (data || []).map((row: Record<string, unknown>) => ({
+        id: row.id as UUID,
+        userId: userId,
+        title: row.title as string | null,
+        lastModified: row.last_modified as number,
+        previewSnippet: row.preview_snippet as string | null,
+        data: null,
+        messageCount: row.message_count as number,
+        createdAt: row.created_at as Date,
+      }));
+    } catch (err) {
+      console.error('Exceção ao buscar conversas:', err);
+      return [];
+    }
+  }
+
+  /**
    * Busca uma conversa específica
    */
   async getConversation(conversationId: UUID, userId: UUID): Promise<Conversation | null> {
